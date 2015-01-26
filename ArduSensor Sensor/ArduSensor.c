@@ -9,6 +9,8 @@
 
 #define F_CPU 16000000UL
 
+#define _DH_ "0013A200" 		// XBee address of the destination Supernode
+#define _DL_ "40BD5555"
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -23,12 +25,12 @@
 
 
 uint16_t sleepCounter = 60000;
-uint16_t timeforsleep = 64000;	//64000 around 24 minutes sleep time
+uint16_t timeforsleep = 6400;	//64000 around 24 minutes sleep time
 uint16_t TempValueSens= 0;		//the value of the meaasured temperature from ferrite
 uint16_t TempValueI = 0;		//the value of the measured temperature from cpu
 uint16_t VoltageValue = 0;		//the voltage of the supply
 uint16_t CapMeas = 0;
-uint16_t PostID = 11;
+uint16_t PostID = 14;
 char buffer[64];
 uint8_t SC = 0;
 
@@ -56,7 +58,44 @@ int main(void)
 	
 	uart_init(UART_BAUD_SELECT(9600,F_CPU));	//Enable xbee uart at 9600
 	
+	// Initialization sequence, sets the ID of Supernode that will connect to
+	uart_puts("+++"); 			//Enter command mode
+	_delay_ms(2000);
+
+	uart_puts("ATID 1342\r"); 	// Set PAN ID
+	_delay_ms(500);
 	
+ 	uart_puts("ATDH"); 			// Set address
+	_delay_ms(10);
+	uart_puts(_DH_); 			// Written in #Define
+	uart_puts("\r");
+	_delay_ms(100);
+	
+	uart_puts("ATDL");
+	_delay_ms(10);
+	uart_puts(_DL_);			// Written in #Define
+	uart_puts("\r");
+	_delay_ms(100);
+	
+	
+	uart_puts("ATNH 1E\r");		// Required XBee constants
+	_delay_ms(100);
+	uart_puts("ATNO 3\r");
+	_delay_ms(100);
+	uart_puts("ATSP 7D0\r");
+	_delay_ms(100);
+	uart_puts("ATSN 21C\r");
+	_delay_ms(100);
+	uart_puts("ATSM 1\r");
+	_delay_ms(100);
+	
+	uart_puts("ATWR\r");		// Save configuration
+	_delay_ms(2000);
+	
+	uart_puts("ATCN\r");		// Exit Command mode
+	_delay_ms(1000);
+
+
     while(1)
     {
 		if(sleepCounter >= timeforsleep )
